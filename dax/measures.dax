@@ -1,0 +1,67 @@
+-- Project 1 — corrected DAX conventions
+-- Use the corrected FactBVA/TypeDim/DateDim model.
+-- Percentage measures return decimals and should be formatted as Percentage in Power BI.
+
+Revenue = SUM(FactBVA_recommended[Revenue])
+COGS = SUM(FactBVA_recommended[COGS])
+Shipping = SUM(FactBVA_recommended[Shipping])
+Salary = SUM(FactBVA_recommended[Salary])
+Taxes = SUM(FactBVA_recommended[Taxes])
+
+Revenue Actual = CALCULATE([Revenue], TypeDim_recommended[TYPES] = "ACTUAL")
+Revenue Budget = CALCULATE([Revenue], TypeDim_recommended[TYPES] = "BUDGET")
+COGS Actual = CALCULATE([COGS], TypeDim_recommended[TYPES] = "ACTUAL")
+COGS Budget = CALCULATE([COGS], TypeDim_recommended[TYPES] = "BUDGET")
+Salary Actual = CALCULATE([Salary], TypeDim_recommended[TYPES] = "ACTUAL")
+Salary Budget = CALCULATE([Salary], TypeDim_recommended[TYPES] = "BUDGET")
+Shipping Actual = CALCULATE([Shipping], TypeDim_recommended[TYPES] = "ACTUAL")
+Shipping Budget = CALCULATE([Shipping], TypeDim_recommended[TYPES] = "BUDGET")
+Taxes Actual = CALCULATE([Taxes], TypeDim_recommended[TYPES] = "ACTUAL")
+Taxes Budget = CALCULATE([Taxes], TypeDim_recommended[TYPES] = "BUDGET")
+
+Operating Profit Actual = [Revenue Actual] - [COGS Actual] - [Salary Actual] - [Shipping Actual]
+Operating Profit Budget = [Revenue Budget] - [COGS Budget] - [Salary Budget] - [Shipping Budget]
+Net Profit Actual = [Operating Profit Actual] - [Taxes Actual]
+Net Profit Budget = [Operating Profit Budget] - [Taxes Budget]
+
+Net Margin Actual = DIVIDE([Net Profit Actual], [Revenue Actual])
+Net Margin Budget = DIVIDE([Net Profit Budget], [Revenue Budget])
+Net Margin Variance (pp) = [Net Margin Actual] - [Net Margin Budget]
+
+Variance Revenue = [Revenue Actual] - [Revenue Budget]
+Variance COGS = [COGS Actual] - [COGS Budget]
+Variance Salary = [Salary Actual] - [Salary Budget]
+Variance Shipping = [Shipping Actual] - [Shipping Budget]
+Variance Taxes = [Taxes Actual] - [Taxes Budget]
+Variance Net Profit = [Net Profit Actual] - [Net Profit Budget]
+
+Variance % Revenue = DIVIDE([Variance Revenue], [Revenue Budget])
+Variance % COGS = DIVIDE([Variance COGS], [COGS Budget])
+Variance % Salary = DIVIDE([Variance Salary], [Salary Budget])
+Variance % Shipping = DIVIDE([Variance Shipping], [Shipping Budget])
+Variance % Taxes = DIVIDE([Variance Taxes], [Taxes Budget])
+Variance % Net Profit = DIVIDE([Variance Net Profit], [Net Profit Budget])
+
+-- For time intelligence, mark DateDim_recommended as the model Date table in Power BI.
+Previous Month Revenue =
+CALCULATE([Revenue], DATEADD(DateDim_recommended[FullDate], -1, MONTH))
+
+Revenue Growth % =
+DIVIDE([Revenue] - [Previous Month Revenue], [Previous Month Revenue])
+
+Previous Month COGS =
+CALCULATE([COGS], DATEADD(DateDim_recommended[FullDate], -1, MONTH))
+
+COGS Growth % =
+DIVIDE([COGS] - [Previous Month COGS], [Previous Month COGS])
+
+-- Waterfall categories should be stored in a small disconnected category table.
+Variance Waterfall =
+SWITCH(
+    SELECTEDVALUE('Variance Categories'[Category]),
+    "Revenue", [Variance Revenue],
+    "COGS", -[Variance COGS],
+    "Salary", -[Variance Salary],
+    "Shipping", -[Variance Shipping],
+    "Taxes", -[Variance Taxes]
+)
